@@ -2,7 +2,7 @@ package com.gangzai.ggojbackendjudgeservice.controller.inner;
 
 import com.gangzai.ggojbackendjudgeservice.judge.JudgeService;
 import com.gangzai.ggojbackendmodel.entity.QuestionSubmit;
-import com.gangzai.ggojbackendserviceclient.JudgeFeignClient;
+import com.gangzai.ggojbackendserviceclient.service.JudgeFeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;

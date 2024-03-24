@@ -1,4 +1,4 @@
-package com.gangzai.ggojbackendserviceclient;
+package com.gangzai.ggojbackendserviceclient.service;
 
 import com.gangzai.ggojbackendmodel.entity.QuestionSubmit;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
  * @author gangzai
  * @date 2024/3/22
  */
-@FeignClient(name = "ggoj-backend-judge-service", url = "/api/judge/inner")
+@FeignClient(name = "ggoj-backend-judge-service", path = "/api/judge/inner")
 public interface JudgeFeignClient {
     /**
      * 判题

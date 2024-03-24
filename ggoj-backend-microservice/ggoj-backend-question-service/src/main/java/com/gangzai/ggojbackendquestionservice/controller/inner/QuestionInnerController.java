@@ -4,7 +4,7 @@ import com.gangzai.ggojbackendmodel.entity.Question;
 import com.gangzai.ggojbackendmodel.entity.QuestionSubmit;
 import com.gangzai.ggojbackendquestionservice.service.QuestionService;
 import com.gangzai.ggojbackendquestionservice.service.QuestionSubmitService;
-import com.gangzai.ggojbackendserviceclient.QuestionFeignClient;
+import com.gangzai.ggojbackendserviceclient.service.QuestionFeignClient;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;

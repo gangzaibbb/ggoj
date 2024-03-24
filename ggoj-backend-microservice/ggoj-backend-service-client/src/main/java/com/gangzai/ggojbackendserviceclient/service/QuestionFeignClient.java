@@ -1,4 +1,4 @@
-package com.gangzai.ggojbackendserviceclient;
+package com.gangzai.ggojbackendserviceclient.service;
 
 import com.gangzai.ggojbackendmodel.entity.Question;
 import com.gangzai.ggojbackendmodel.entity.QuestionSubmit;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
  * @author gangzai
  * @date 2024/3/22
  */
-@FeignClient(name = "ggoj-backend-judge-service", url = "/api/question/inner")
+@FeignClient(name = "ggoj-backend-question-service", path = "/api/question/inner")
 public interface QuestionFeignClient {
 
     /**
@@ -20,7 +20,7 @@ public interface QuestionFeignClient {
      * @param questionId
      * @return
      */
-    @GetMapping("/get/question/id")
+    @GetMapping("/get/id")
     Question getQuestionById(@RequestParam("questionId") long questionId);
 
     /**

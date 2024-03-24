@@ -35,7 +35,7 @@ public class JavaDockerCodeSandbox extends JavaCodeSandboxTemplate {
     private static final Boolean FIRST_INIT = true;
 
     public static void main(String[] args) {
-        JavaDockerCodeSandbox CodeSandbox = new JavaDockerCodeSandbox();
+        JavaNativeCodeSandbox CodeSandbox = new JavaNativeCodeSandbox();
         ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
         executeCodeRequest.setInputList(Arrays.asList("1 2", "1 3"));
         String code = ResourceUtil.readStr("testCode/simpleComputeArgs/Main.java", StandardCharsets.UTF_8);

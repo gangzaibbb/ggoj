@@ -133,7 +133,10 @@ public abstract class JavaCodeSandboxTemplate implements CodeSandbox {
         executeCodeResponse.setOutputList(outputList);
         JudgeInfo judgeInfo = new JudgeInfo();
         judgeInfo.setTime(maxTime);
+        judgeInfo.setMemory(0L);
         executeCodeResponse.setJudgeInfo(judgeInfo);
+        executeCodeResponse.setStatus(2);
+        executeCodeResponse.setMessage("正常");
         return executeCodeResponse;
     }
 

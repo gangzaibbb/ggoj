@@ -14,7 +14,7 @@ import com.gangzai.ggojbackendmodel.dto.question.JudgeCase;
 import com.gangzai.ggojbackendmodel.entity.Question;
 import com.gangzai.ggojbackendmodel.entity.QuestionSubmit;
 import com.gangzai.ggojbackendmodel.enums.QuestionSubmitStatusEnum;
-import com.gangzai.ggojbackendserviceclient.QuestionFeignClient;
+import com.gangzai.ggojbackendserviceclient.service.QuestionFeignClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -35,7 +35,7 @@ public class JudgeServiceImpl implements JudgeService {
     @Resource
     private JudgeManager judgeManager;
 
-    @Value("codesandbox.type")
+    @Value("${codesandbox.type:example}")
     private String type;
 
     @Override
@@ -50,7 +50,7 @@ public class JudgeServiceImpl implements JudgeService {
         if (question == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "题目不存在");
         }
-        //2. 如果题目提交状态不等待中，就没有必要重复判题了
+        //2. 如果题目提交状态不是等待中，就没有必要重复判题了
         Integer status = questionSubmit.getStatus();
         if (!QuestionSubmitStatusEnum.WAITING.getValue().equals(status)) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "请勿重复判题");

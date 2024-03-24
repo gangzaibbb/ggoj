@@ -1,7 +1,7 @@
 package com.gangzai.ggojbackenduserservice.controller.inner;
 
 import com.gangzai.ggojbackendmodel.entity.User;
-import com.gangzai.ggojbackendserviceclient.UserFeignClient;
+import com.gangzai.ggojbackendserviceclient.service.UserFeignClient;
 import com.gangzai.ggojbackenduserservice.service.UserService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

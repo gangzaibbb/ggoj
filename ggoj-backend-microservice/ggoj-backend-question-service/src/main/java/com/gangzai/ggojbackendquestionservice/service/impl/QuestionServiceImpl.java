@@ -16,7 +16,7 @@ import com.gangzai.ggojbackendmodel.vo.QuestionVO;
 import com.gangzai.ggojbackendmodel.vo.UserVO;
 import com.gangzai.ggojbackendquestionservice.mapper.QuestionMapper;
 import com.gangzai.ggojbackendquestionservice.service.QuestionService;
-import com.gangzai.ggojbackendserviceclient.UserFeignClient;
+import com.gangzai.ggojbackendserviceclient.service.UserFeignClient;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -36,11 +36,17 @@ import java.util.stream.Collectors;
 */
 @Service
 public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
-    implements QuestionService {
+        implements QuestionService {
+
 
     @Resource
     private UserFeignClient userFeignClient;
 
+    /**
+     * 校验题目是否合法
+     * @param question
+     * @param add
+     */
     @Override
     public void validQuestion(Question question, boolean add) {
         if (question == null) {
@@ -52,7 +58,6 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
         String answer = question.getAnswer();
         String judgeCase = question.getJudgeCase();
         String judgeConfig = question.getJudgeConfig();
-
         // 创建时，参数不能为空
         if (add) {
             ThrowUtils.throwIf(StringUtils.isAnyBlank(title, content, tags), ErrorCode.PARAMS_ERROR);
@@ -76,7 +81,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
     }
 
     /**
-     * 获取查询包装类R
+     * 获取查询包装类（用户根据哪些字段查询，根据前端传来的请求对象，得到 mybatis 框架支持的查询 QueryWrapper 类）
      *
      * @param questionQueryRequest
      * @return
@@ -95,6 +100,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
         Long userId = questionQueryRequest.getUserId();
         String sortField = questionQueryRequest.getSortField();
         String sortOrder = questionQueryRequest.getSortOrder();
+
         // 拼接查询条件
         queryWrapper.like(StringUtils.isNotBlank(title), "title", title);
         queryWrapper.like(StringUtils.isNotBlank(content), "content", content);
@@ -112,12 +118,6 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
         return queryWrapper;
     }
 
-    /**
-     * 将查询结果封装成VO
-     * @param question
-     * @param request
-     * @return
-     */
     @Override
     public QuestionVO getQuestionVO(Question question, HttpServletRequest request) {
         QuestionVO questionVO = QuestionVO.objToVo(question);
@@ -132,12 +132,6 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
         return questionVO;
     }
 
-    /**
-     * 将MP分页查询结果封装成VO
-     * @param questionPage
-     * @param request
-     * @return
-     */
     @Override
     public Page<QuestionVO> getQuestionVOPage(Page<Question> questionPage, HttpServletRequest request) {
         List<Question> questionList = questionPage.getRecords();
@@ -163,6 +157,8 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
         questionVOPage.setRecords(questionVOList);
         return questionVOPage;
     }
+
+
 }
 
 

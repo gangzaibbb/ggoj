@@ -17,7 +17,12 @@ public class JavaNativeCodeSandbox extends JavaCodeSandboxTemplate {
 
     private static final long TIME_OUT = 5000L;
 
-    @Override
+    /**
+     * 3、执行文件，获得执行结果列表
+     * @param userCodeFile
+     * @param inputList
+     * @return
+     */
     public List<ExecuteMessage> runFile(File userCodeFile, List<String> inputList) {
         String userCodeParentPath = userCodeFile.getParentFile().getAbsolutePath();
 

@@ -1,4 +1,4 @@
-package com.gangzai.ggojbackendserviceclient;
+package com.gangzai.ggojbackendserviceclient.service;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.gangzai.ggojbackendcommon.common.ErrorCode;
@@ -21,7 +21,7 @@ import static com.gangzai.ggojbackendcommon.constant.UserConstant.USER_LOGIN_STA
  * @author gangzai
  * @date 2024/3/22
  */
-@FeignClient(name = "ggoj-backend-user-service", url = "/api/user/inner")
+@FeignClient(name = "ggoj-backend-user-service", path = "/api/user/inner")
 public interface UserFeignClient {
 
     /**

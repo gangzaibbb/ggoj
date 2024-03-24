@@ -21,7 +21,7 @@ public class ExecuteCodeResponse {
     /**
      * 程序运行输出结果
      */
-    private List<String> OutputList;
+    private List<String> outputList;
 
     /**
      * 接口信息

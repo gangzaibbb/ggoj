@@ -16,10 +16,11 @@ import com.gangzai.ggojbackendmodel.enums.QuestionSubmitLanguageEnum;
 import com.gangzai.ggojbackendmodel.enums.QuestionSubmitStatusEnum;
 import com.gangzai.ggojbackendmodel.vo.QuestionSubmitVO;
 import com.gangzai.ggojbackendquestionservice.mapper.QuestionSubmitMapper;
+import com.gangzai.ggojbackendquestionservice.rabbitmq.MyMessageProducer;
 import com.gangzai.ggojbackendquestionservice.service.QuestionService;
 import com.gangzai.ggojbackendquestionservice.service.QuestionSubmitService;
-import com.gangzai.ggojbackendserviceclient.JudgeFeignClient;
-import com.gangzai.ggojbackendserviceclient.UserFeignClient;
+import com.gangzai.ggojbackendserviceclient.service.JudgeFeignClient;
+import com.gangzai.ggojbackendserviceclient.service.UserFeignClient;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -38,7 +39,7 @@ import java.util.stream.Collectors;
 */
 @Service
 public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper, QuestionSubmit>
-    implements QuestionSubmitService {
+        implements QuestionSubmitService {
 
     @Resource
     private QuestionService questionService;
@@ -48,10 +49,13 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
 
     @Resource
     @Lazy
-    //解决循环依赖，需要用时才加载这个bean，解决死锁问题
     private JudgeFeignClient judgeFeignClient;
+
+    @Resource
+    private MyMessageProducer myMessageProducer;
+
     /**
-     * 提交
+     * 提交题目
      *
      * @param questionSubmitAddRequest
      * @param loginUser
@@ -59,40 +63,46 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
      */
     @Override
     public long doQuestionSubmit(QuestionSubmitAddRequest questionSubmitAddRequest, User loginUser) {
-        // 判断题目是否存在，根据id获取题目
-        Long questionId = questionSubmitAddRequest.getQuestionId();
+        // 校验编程语言是否合法
+        String language = questionSubmitAddRequest.getLanguage();
+        QuestionSubmitLanguageEnum languageEnum = QuestionSubmitLanguageEnum.getEnumByValue(language);
+        if (languageEnum == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "编程语言错误");
+        }
+        long questionId = questionSubmitAddRequest.getQuestionId();
+        // 判断实体是否存在，根据类别获取实体
         Question question = questionService.getById(questionId);
         if (question == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
-        // 校验语言是否合法
-        String language = questionSubmitAddRequest.getLanguage();
-        QuestionSubmitLanguageEnum enumByValue = QuestionSubmitLanguageEnum.getEnumByValue(language);
-        if (enumByValue == null) {
-            throw  new BusinessException(ErrorCode.PARAMS_ERROR, "编程语言错误");
-        }
-        String code = questionSubmitAddRequest.getCode();
+        // 是否已提交题目
         long userId = loginUser.getId();
-        // 封装数据
+        // 每个用户串行提交题目
         QuestionSubmit questionSubmit = new QuestionSubmit();
         questionSubmit.setUserId(userId);
         questionSubmit.setQuestionId(questionId);
+        questionSubmit.setCode(questionSubmitAddRequest.getCode());
         questionSubmit.setLanguage(language);
-        questionSubmit.setCode(code);
+        // 设置初始状态
         questionSubmit.setStatus(QuestionSubmitStatusEnum.WAITING.getValue());
         questionSubmit.setJudgeInfo("{}");
-        boolean save = save(questionSubmit);
-        if (!save) {
+        boolean save = this.save(questionSubmit);
+        if (!save){
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "数据插入失败");
         }
-        //异步调用判题模块
         Long questionSubmitId = questionSubmit.getId();
-        CompletableFuture.runAsync(() -> {
-            judgeFeignClient.doJudge(questionSubmitId);
-        });
+        // 发送消息
+        myMessageProducer.sendMessage("code_exchange", "my_routingKey", String.valueOf(questionSubmitId));
         return questionSubmitId;
     }
 
+
+    /**
+     * 获取查询包装类（用户根据哪些字段查询，根据前端传来的请求对象，得到 mybatis 框架支持的查询 QueryWrapper 类）
+     *
+     * @param questionSubmitQueryRequest
+     * @return
+     */
     @Override
     public QueryWrapper<QuestionSubmit> getQueryWrapper(QuestionSubmitQueryRequest questionSubmitQueryRequest) {
         QueryWrapper<QuestionSubmit> queryWrapper = new QueryWrapper<>();
@@ -142,6 +152,8 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
         questionSubmitVOPage.setRecords(questionSubmitVOList);
         return questionSubmitVOPage;
     }
+
+
 }
 
 

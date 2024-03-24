@@ -20,7 +20,7 @@ import com.gangzai.ggojbackendmodel.vo.QuestionSubmitVO;
 import com.gangzai.ggojbackendmodel.vo.QuestionVO;
 import com.gangzai.ggojbackendquestionservice.service.QuestionService;
 import com.gangzai.ggojbackendquestionservice.service.QuestionSubmitService;
-import com.gangzai.ggojbackendserviceclient.UserFeignClient;
+import com.gangzai.ggojbackendserviceclient.service.UserFeignClient;
 import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -37,7 +37,7 @@ import java.util.List;
  * 
  */
 @RestController
-@RequestMapping("/question")
+@RequestMapping("/")
 @Slf4j
 public class QuestionController {
 
@@ -63,6 +63,11 @@ public class QuestionController {
      */
     @PostMapping("/add")
     public BaseResponse<Long> addQuestion(@RequestBody QuestionAddRequest questionAddRequest, HttpServletRequest request) {
+        User loginUser = userFeignClient.getLoginUser(request);
+        // 仅管理员可添加
+        if (!userFeignClient.isAdmin(loginUser)) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+        }
         if (questionAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -81,7 +86,6 @@ public class QuestionController {
             question.setJudgeConfig(GSON.toJson(judgeConfig));
         }
         questionService.validQuestion(question, true);
-        User loginUser = userFeignClient.getLoginUser(request);
         question.setUserId(loginUser.getId());
         question.setFavourNum(0);
         question.setThumbNum(0);
@@ -296,6 +300,7 @@ public class QuestionController {
         boolean result = questionService.updateById(question);
         return ResultUtils.success(result);
     }
+
     /**
      * 提交题目
      *
@@ -309,7 +314,6 @@ public class QuestionController {
         if (questionSubmitAddRequest == null || questionSubmitAddRequest.getQuestionId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        // 登录才能提交
         final User loginUser = userFeignClient.getLoginUser(request);
         long questionSubmitId = questionSubmitService.doQuestionSubmit(questionSubmitAddRequest, loginUser);
         return ResultUtils.success(questionSubmitId);
