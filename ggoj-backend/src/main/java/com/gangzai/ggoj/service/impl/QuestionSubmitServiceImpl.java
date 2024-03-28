@@ -1,6 +1,7 @@
 package com.gangzai.ggoj.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.conditions.update.UpdateChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gangzai.ggoj.common.ErrorCode;
@@ -71,9 +72,16 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
         if (enumByValue == null) {
             throw  new BusinessException(ErrorCode.PARAMS_ERROR, "编程语言错误");
         }
+        // 提交数 + 1
+        Integer submitNum = question.getSubmitNum();
+        submitNum += 1;
+        boolean update = questionService.update().eq("id", questionId).set("submitNum", submitNum).update();
+        if(!update){
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "数据插入失败");
+        }
+        // 封装数据
         String code = questionSubmitAddRequest.getCode();
         long userId = loginUser.getId();
-        // 封装数据
         QuestionSubmit questionSubmit = new QuestionSubmit();
         questionSubmit.setUserId(userId);
         questionSubmit.setQuestionId(questionId);

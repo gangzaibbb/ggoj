@@ -13,6 +13,7 @@ import com.gangzai.ggoj.judge.strategy.JudgeContext;
 import com.gangzai.ggoj.model.dto.question.JudgeCase;
 import com.gangzai.ggoj.model.entity.Question;
 import com.gangzai.ggoj.model.entity.QuestionSubmit;
+import com.gangzai.ggoj.model.enums.JudgeInfoMessageEnum;
 import com.gangzai.ggoj.model.enums.QuestionSubmitStatusEnum;
 import com.gangzai.ggoj.service.QuestionService;
 import com.gangzai.ggoj.service.QuestionSubmitService;
@@ -39,7 +40,7 @@ public class JudgeServiceImpl implements JudgeService {
     @Resource
     private JudgeManager judgeManager;
 
-    @Value("codesandbox.type")
+    @Value("${codesandbox.type}")
     private String type;
 
     @Override
@@ -54,7 +55,7 @@ public class JudgeServiceImpl implements JudgeService {
         if (question == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "题目不存在");
         }
-        //2. 如果题目提交状态不等待中，就没有必要重复判题了
+        //2. 如果题目提交状态不是等待中，就没有必要重复判题了
         Integer status = questionSubmit.getStatus();
         if (!QuestionSubmitStatusEnum.WAITING.getValue().equals(status)) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "请勿重复判题");
@@ -82,6 +83,7 @@ public class JudgeServiceImpl implements JudgeService {
         JudgeInfo judgeInfo = executeCodeResponse.getJudgeInfo();
         List<String> outputList = executeCodeResponse.getOutputList();
         JudgeContext judgeContext = new JudgeContext();
+        judgeContext.setMessage(executeCodeResponse.getMessage());
         judgeContext.setJudgeInfo(judgeInfo);
         judgeContext.setInputList(inputList);
         judgeContext.setOutputList(outputList);
@@ -95,6 +97,15 @@ public class JudgeServiceImpl implements JudgeService {
         questionSubmitUpdate.setJudgeInfo(JSONUtil.toJsonStr(judgeInfoResponse));
         questionSubmitUpdate.setId(questionSubmitId);
         boolean update = questionSubmitService.updateById(questionSubmitUpdate);
+        // 如果答案正确，通过数+1
+        if (judgeInfoResponse.getResult().equals(JudgeInfoMessageEnum.ACCEPTED.getValue())) {
+            Integer acceptedNum = question.getAcceptedNum();
+            acceptedNum += 1;
+            boolean updated = questionService.update().eq("id", questionId).set("acceptedNum", acceptedNum).update();
+            if(!updated){
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "数据更新失败");
+            }
+        }
         if (!update) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "数据更新失败");
         }

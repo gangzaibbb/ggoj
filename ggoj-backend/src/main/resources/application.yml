@@ -43,7 +43,7 @@ spring:
       max-file-size: 10MB
 server:
   address: 0.0.0.0
-  port: 8121
+  port: 8101
   servlet:
     context-path: /api
     # cookie 30 天过期
@@ -90,4 +90,4 @@ cos:
     bucket: xxx
 # 代码沙箱选择
 codesandbox:
-  type:example
+  type: remote

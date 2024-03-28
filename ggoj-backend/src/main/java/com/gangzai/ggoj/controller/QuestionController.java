@@ -1,5 +1,6 @@
 package com.gangzai.ggoj.controller;
 
+import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.gangzai.ggoj.annotation.AuthCheck;
 import com.gangzai.ggoj.common.BaseResponse;
@@ -186,6 +187,41 @@ public class QuestionController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         Question question = questionService.getById(id);
+        if (question == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        return ResultUtils.success(questionService.getQuestionVO(question, request));
+    }
+
+    @GetMapping("/get/vo/random")
+    public BaseResponse<QuestionVO> getQuestionRandom(HttpServletRequest request){
+        long count = questionService.count();
+        int id = RandomUtil.randomInt(1, (int) count);
+        Question question = questionService.getById(id);
+        if (question == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        return ResultUtils.success(questionService.getQuestionVO(question, request));
+    }
+
+    @GetMapping("/get/vo/next")
+    public BaseResponse<QuestionVO> getQuestionNext(@RequestParam("questionId") Long id, HttpServletRequest request){
+        if (id == null || id <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        Question question = questionService.getById(id + 1);
+        if (question == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        return ResultUtils.success(questionService.getQuestionVO(question, request));
+    }
+
+    @GetMapping("/get/vo/previous")
+    public BaseResponse<QuestionVO> getQuestionPrevious(@RequestParam("questionId") Long id, HttpServletRequest request){
+        if (id == null || id <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        Question question = questionService.getById(id + 1);
         if (question == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }

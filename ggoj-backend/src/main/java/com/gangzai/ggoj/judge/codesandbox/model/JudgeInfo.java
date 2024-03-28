@@ -15,6 +15,11 @@ public class JudgeInfo {
     private String message;
 
     /**
+     *  判题结果
+     */
+    private String result;
+
+    /**
      * 消耗内存
      */
     private Long memory;

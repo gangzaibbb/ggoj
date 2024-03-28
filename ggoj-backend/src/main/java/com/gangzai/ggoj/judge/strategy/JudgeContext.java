@@ -22,6 +22,11 @@ public class JudgeContext {
     private JudgeInfo judgeInfo;
 
     /**
+     * 代码沙箱执行信息
+     */
+    private String message;
+
+    /**
      * 输入用例
      */
     private List<String> inputList;

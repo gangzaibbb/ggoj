@@ -89,6 +89,21 @@ public class QuestionVO implements Serializable {
     private UserVO userVO;
 
     /**
+     * 做题状态（是否已通过）
+     */
+    private Integer statue;
+
+    /**
+     * 通过率
+     */
+    private String passRate;
+
+    /**
+     * 答案
+     */
+    private String answer;
+
+    /**
      * VO转Entity
      */
     public static Question voToObj(QuestionVO questionVO){
@@ -118,10 +133,20 @@ public class QuestionVO implements Serializable {
         }
         QuestionVO questionVO = new QuestionVO();
         BeanUtils.copyProperties(question, questionVO);
+        // 数据库中的Json字符串转化为实体对象
         List<String> tagList = JSONUtil.toList(question.getTags(), String.class);
         questionVO.setTags(tagList);
         String judgeConfigStr = question.getJudgeConfig();
         questionVO.setJudgeConfig(JSONUtil.toBean(judgeConfigStr, JudgeConfig.class));
+        // 计算通过率
+        float acceptedNum = (float)question.getAcceptedNum();
+        float submitNum = (float)question.getSubmitNum();
+        try{
+            String passRate = Float.valueOf(acceptedNum / submitNum).toString();
+            questionVO.setPassRate(passRate);
+        }catch (Exception e){
+            questionVO.setPassRate("0");
+        }
         return questionVO;
     }
 

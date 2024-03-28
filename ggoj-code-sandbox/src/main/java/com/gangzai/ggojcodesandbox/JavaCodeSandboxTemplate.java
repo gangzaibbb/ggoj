@@ -10,6 +10,7 @@ import com.gangzai.ggojcodesandbox.utils.ProcessUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,11 @@ public abstract class JavaCodeSandboxTemplate implements CodeSandbox {
 
 //        2. 编译代码，得到 class 文件
         ExecuteMessage compileFileExecuteMessage = compileFile(userCodeFile);
+        if (compileFileExecuteMessage.getExitValue() != 0) {
+            ExecuteCodeResponse executeCodeResponse = new ExecuteCodeResponse();
+            executeCodeResponse.setMessage("编译错误");
+            return executeCodeResponse;
+        }
         System.out.println(compileFileExecuteMessage);
 
         // 3. 执行代码，得到输出结果
@@ -81,17 +87,14 @@ public abstract class JavaCodeSandboxTemplate implements CodeSandbox {
      */
     public ExecuteMessage compileFile(File userCodeFile) {
         String compileCmd = String.format("javac -encoding utf-8 %s", userCodeFile.getAbsolutePath());
+        Process compileProcess = null;
         try {
-            Process compileProcess = Runtime.getRuntime().exec(compileCmd);
-            ExecuteMessage executeMessage = ProcessUtils.runProcessAndGetMessage(compileProcess, "编译");
-            if (executeMessage.getExitValue() != 0) {
-                throw new RuntimeException("编译错误");
-            }
-            return executeMessage;
-        } catch (Exception e) {
-//            return getErrorResponse(e);
+            compileProcess = Runtime.getRuntime().exec(compileCmd);
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        ExecuteMessage executeMessage = ProcessUtils.runProcessAndGetMessage(compileProcess, "编译");
+        return executeMessage;
     }
 
     /**

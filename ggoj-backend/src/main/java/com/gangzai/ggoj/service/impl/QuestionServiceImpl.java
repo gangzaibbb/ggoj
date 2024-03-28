@@ -1,5 +1,6 @@
 package com.gangzai.ggoj.service.impl;
 
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -7,18 +8,26 @@ import com.gangzai.ggoj.common.ErrorCode;
 import com.gangzai.ggoj.constant.CommonConstant;
 import com.gangzai.ggoj.exception.BusinessException;
 import com.gangzai.ggoj.exception.ThrowUtils;
+import com.gangzai.ggoj.judge.codesandbox.model.JudgeInfo;
 import com.gangzai.ggoj.mapper.QuestionMapper;
 import com.gangzai.ggoj.model.dto.question.QuestionQueryRequest;
 import com.gangzai.ggoj.model.entity.Question;
+import com.gangzai.ggoj.model.entity.QuestionSubmit;
 import com.gangzai.ggoj.model.entity.User;
+import com.gangzai.ggoj.model.enums.JudgeInfoMessageEnum;
+import com.gangzai.ggoj.model.enums.QuestionSubmitStatusEnum;
+import com.gangzai.ggoj.model.enums.QuestionUserStatusEnum;
+import com.gangzai.ggoj.model.vo.QuestionSubmitVO;
 import com.gangzai.ggoj.model.vo.QuestionVO;
 import com.gangzai.ggoj.model.vo.UserVO;
 import com.gangzai.ggoj.service.QuestionService;
+import com.gangzai.ggoj.service.QuestionSubmitService;
 import com.gangzai.ggoj.service.UserService;
 import com.gangzai.ggoj.utils.SqlUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -37,6 +46,10 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
 
     @Resource
     private UserService userService;
+
+    @Resource
+    @Lazy
+    private QuestionSubmitService questionSubmitService;
 
     @Override
     public void validQuestion(Question question, boolean add) {
@@ -118,11 +131,27 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
     @Override
     public QuestionVO getQuestionVO(Question question, HttpServletRequest request) {
         QuestionVO questionVO = QuestionVO.objToVo(question);
-        // 1. 关联查询用户信息
+        // 1. 查询创建题目的用户信息
         Long userId = question.getUserId();
         User user = null;
         if (userId != null && userId > 0) {
             user = userService.getById(userId);
+        }
+        // 2. 判断当前查询用户的做题状态
+        Long loginUserId = userService.getLoginUser(request).getId();
+        List<QuestionSubmit> questionSubmitList = questionSubmitService.query().eq("userId", loginUserId).eq("questionId", question.getId()).list();
+        if (questionSubmitList.isEmpty()) {
+            questionVO.setStatue(QuestionUserStatusEnum.NOTBEGIN.getValue());
+        }
+        else {
+            for (QuestionSubmit questionSubmit : questionSubmitList) {
+                JudgeInfo judgeInfo = JSONUtil.toBean(questionSubmit.getJudgeInfo(), JudgeInfo.class);
+                if (judgeInfo.getMessage() != null && judgeInfo.getMessage().equals(JudgeInfoMessageEnum.ACCEPTED.getValue())) {
+                    questionVO.setStatue(QuestionUserStatusEnum.PASS.getValue());
+                    break;
+                }
+            }
+            questionVO.setStatue(QuestionUserStatusEnum.TRIED.getValue());
         }
         UserVO userVO = userService.getUserVO(user);
         questionVO.setUserVO(userVO);
@@ -142,10 +171,13 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
         if (CollectionUtils.isEmpty(questionList)) {
             return questionVOPage;
         }
-        // 1. 关联查询用户信息
+        // 1. 关联查询创建题目的用户信息
         Set<Long> userIdSet = questionList.stream().map(Question::getUserId).collect(Collectors.toSet());
         Map<Long, List<User>> userIdUserListMap = userService.listByIds(userIdSet).stream()
                 .collect(Collectors.groupingBy(User::getId));
+        // 2. 查询当前查询用户的题目提交信息
+        Long loginUserId = userService.getLoginUser(request).getId();
+        List<QuestionSubmit> questionSubmitList = questionSubmitService.query().eq("userId", loginUserId).list();
         // 填充信息
         List<QuestionVO> questionVOList = questionList.stream().map(question -> {
             QuestionVO questionVO = QuestionVO.objToVo(question);
@@ -155,6 +187,18 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
                 user = userIdUserListMap.get(userId).get(0);
             }
             questionVO.setUserVO(userService.getUserVO(user));
+            // 判断题目提交状态
+            questionVO.setStatue(QuestionUserStatusEnum.NOTBEGIN.getValue());
+            for (QuestionSubmit questionSubmit : questionSubmitList){
+                if (questionSubmit.getQuestionId().equals(question.getId())) {
+                    JudgeInfo judgeInfo = JSONUtil.toBean(questionSubmit.getJudgeInfo(), JudgeInfo.class);
+                    if (judgeInfo.getMessage() != null && judgeInfo.getMessage().equals(JudgeInfoMessageEnum.ACCEPTED.getValue())) {
+                        questionVO.setStatue(QuestionUserStatusEnum.PASS.getValue());
+                        break;
+                    }
+                    questionVO.setStatue(QuestionUserStatusEnum.TRIED.getValue());
+                }
+            }
             return questionVO;
         }).collect(Collectors.toList());
         questionVOPage.setRecords(questionVOList);
