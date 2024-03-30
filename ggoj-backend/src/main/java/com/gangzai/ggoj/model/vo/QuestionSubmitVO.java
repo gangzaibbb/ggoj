@@ -45,9 +45,9 @@ public class QuestionSubmitVO implements Serializable {
     private Long questionId;
 
     /**
-     * 创建用户 id
+     * 创建用户名称
      */
-    private Long userId;
+    private String userName;
 
     /**
      * 创建时间

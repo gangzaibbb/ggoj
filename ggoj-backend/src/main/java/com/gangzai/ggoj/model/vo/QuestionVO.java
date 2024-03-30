@@ -69,7 +69,7 @@ public class QuestionVO implements Serializable {
     private Integer favourNum;
 
     /**
-     * 创建用户 id
+     * 创建用户id
      */
     private Long userId;
 

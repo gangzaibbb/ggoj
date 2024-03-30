@@ -22,7 +22,7 @@ public class QuestionSubmitQueryRequest extends PageRequest implements Serializa
     /**
      * 提交用户id
      */
-    private Long userId;
+    private String userName;
 
     /**
      * 题目id
