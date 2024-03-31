@@ -165,7 +165,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
      * @return
      */
     @Override
-    public Page<QuestionVO> getQuestionVOPage(Page<Question> questionPage, HttpServletRequest request) {
+    public Page<QuestionVO> getQuestionVOPage(Page<Question> questionPage, HttpServletRequest request, Integer statue) {
         List<Question> questionList = questionPage.getRecords();
         Page<QuestionVO> questionVOPage = new Page<>(questionPage.getCurrent(), questionPage.getSize(), questionPage.getTotal());
         if (CollectionUtils.isEmpty(questionList)) {
@@ -178,7 +178,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
         // 2. 查询当前查询用户的题目提交信息
         Long loginUserId = userService.getLoginUser(request).getId();
         List<QuestionSubmit> questionSubmitList = questionSubmitService.query().eq("userId", loginUserId).list();
-        // 填充信息
+        // 填充信息，根据用户提交状态过滤
         List<QuestionVO> questionVOList = questionList.stream().map(question -> {
             QuestionVO questionVO = QuestionVO.objToVo(question);
             Long userId = question.getUserId();
@@ -200,6 +200,12 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
                 }
             }
             return questionVO;
+        }).filter(questionVO -> {
+            // 不需要过滤
+            if (statue == null || statue.equals(QuestionUserStatusEnum.ALL.getValue())) {
+                return true;
+            }
+            return questionVO.getStatue().equals(statue);
         }).collect(Collectors.toList());
         questionVOPage.setRecords(questionVOList);
         return questionVOPage;

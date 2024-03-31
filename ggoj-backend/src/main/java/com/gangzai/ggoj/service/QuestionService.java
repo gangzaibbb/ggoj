@@ -48,5 +48,5 @@ public interface QuestionService extends IService<Question> {
      * @param request
      * @return
      */
-    Page<QuestionVO> getQuestionVOPage(Page<Question> questionPage, HttpServletRequest request);
+    Page<QuestionVO> getQuestionVOPage(Page<Question> questionPage, HttpServletRequest request, Integer statue);
 }

@@ -10,12 +10,14 @@ import com.gangzai.ggoj.common.ResultUtils;
 import com.gangzai.ggoj.constant.UserConstant;
 import com.gangzai.ggoj.exception.BusinessException;
 import com.gangzai.ggoj.exception.ThrowUtils;
+import com.gangzai.ggoj.judge.codesandbox.model.JudgeInfo;
 import com.gangzai.ggoj.model.dto.question.*;
 import com.gangzai.ggoj.model.dto.questionsubmit.QuestionSubmitAddRequest;
 import com.gangzai.ggoj.model.dto.questionsubmit.QuestionSubmitQueryRequest;
 import com.gangzai.ggoj.model.entity.Question;
 import com.gangzai.ggoj.model.entity.QuestionSubmit;
 import com.gangzai.ggoj.model.entity.User;
+import com.gangzai.ggoj.model.enums.JudgeInfoMessageEnum;
 import com.gangzai.ggoj.model.vo.QuestionSubmitVO;
 import com.gangzai.ggoj.model.vo.QuestionVO;
 import com.gangzai.ggoj.service.QuestionService;
@@ -221,7 +223,7 @@ public class QuestionController {
         if (id == null || id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        Question question = questionService.getById(id + 1);
+        Question question = questionService.getById(id - 1);
         if (question == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
@@ -244,7 +246,7 @@ public class QuestionController {
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
         Page<Question> questionPage = questionService.page(new Page<>(current, size),
                 questionService.getQueryWrapper(questionQueryRequest));
-        return ResultUtils.success(questionService.getQuestionVOPage(questionPage, request));
+        return ResultUtils.success(questionService.getQuestionVOPage(questionPage, request, questionQueryRequest.getStatue()));
     }
 
     /**
@@ -268,7 +270,7 @@ public class QuestionController {
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
         Page<Question> questionPage = questionService.page(new Page<>(current, size),
                 questionService.getQueryWrapper(questionQueryRequest));
-        return ResultUtils.success(questionService.getQuestionVOPage(questionPage, request));
+        return ResultUtils.success(questionService.getQuestionVOPage(questionPage, request, questionQueryRequest.getStatue()));
     }
 
     /**
@@ -339,15 +341,22 @@ public class QuestionController {
      * @return 提交记录的 id
      */
     @PostMapping("/question_submit/do")
-    public BaseResponse<Long> doQuestionSubmit(@RequestBody QuestionSubmitAddRequest questionSubmitAddRequest,
-                                               HttpServletRequest request) {
+    public BaseResponse<JudgeInfo> doQuestionSubmit(@RequestBody QuestionSubmitAddRequest questionSubmitAddRequest,
+                                                    HttpServletRequest request) {
         if (questionSubmitAddRequest == null || questionSubmitAddRequest.getQuestionId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+        JudgeInfo judgeInfo = new JudgeInfo();
+        // 只是测试，不是提交
+        if (questionSubmitAddRequest.getInputList() != null) {
+            judgeInfo.setMessage(JudgeInfoMessageEnum.WAITING.getValue());
+            return ResultUtils.success(judgeInfo);
+        }
         // 登录才能提交
         final User loginUser = userService.getLoginUser(request);
-        long questionSubmitId = questionSubmitService.doQuestionSubmit(questionSubmitAddRequest, loginUser);
-        return ResultUtils.success(questionSubmitId);
+        questionSubmitService.doQuestionSubmit(questionSubmitAddRequest, loginUser);
+        judgeInfo.setMessage(JudgeInfoMessageEnum.WAITING.getValue());
+        return ResultUtils.success(judgeInfo);
     }
 
     /**
